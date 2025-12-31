@@ -1,0 +1,38 @@
+/* app/globals.css */
+
+/* -------------------------------------------------
+   0️⃣ Import third‑party styles (react‑datepicker)
+   ------------------------------------------------- */
+@import "react-datepicker/dist/react-datepicker.css";
+
+/* -------------------------------------------------
+   1️⃣ Reset
+   ------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* -------------------------------------------------
+   2️⃣ Base typography
+   ------------------------------------------------- */
+html,
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  background: #fafafa;
+  color: #222;
+}
+
+/* -------------------------------------------------
+   3️⃣ Utility class example
+   ------------------------------------------------- */
+.text-center {
+  text-align: center;
+}
+.mt-2 {
+  margin-top: 0.5rem;
+}

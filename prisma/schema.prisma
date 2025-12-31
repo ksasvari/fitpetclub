@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/* ---------- ENUMS ---------- */
+enum Gender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+/* ---------- MODELS ---------- */
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  // simple placeholder – later you can replace with Stripe/PayPal plan IDs
+  plan      String   @default("free") // "free" | "premium"
+  pets      Pet[]    // one‑to‑many relation (owned pets)
+  createdAt DateTime @default(now())
+}
+
+/* -------------------------------------------------
+   Pet – now owned by a mandatory user (userId)
+   ------------------------------------------------- */
+model Pet {
+  id          Int          @id @default(autoincrement())
+  name        String
+  species     String
+  breed       String?
+  age         Int?                 // optional – calculated from birthDate if present
+  birthDate   DateTime?            // optional
+  deathDate   DateTime?            // optional
+  gender      Gender      @default(UNKNOWN)
+  neutered    Boolean     @default(false)
+  description String?
+  createdAt   DateTime    @default(now())
+
+  // ---------- RELATIONS ----------
+  userId      Int                   // <-- mandatory foreign key
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weights     WeightLog[]
+
+  // Index for fast lookup of a user’s pets
+  @@index([userId])
+}
+
+/* -------------------------------------------------
+   WeightLog – unchanged, still linked to a Pet
+   ------------------------------------------------- */
+model WeightLog {
+  id         Int      @id @default(autoincrement())
+  pet        Pet      @relation(fields: [petId], references: [id])
+  petId      Int
+  weightKg   Float    // store in kilograms (you can convert to lbs in UI if you wish)
+  measuredAt DateTime @default(now()) // when the measurement was taken
+
+  @@index([petId])
+}
