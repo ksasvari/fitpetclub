@@ -1,64 +1,91 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+// app/api/pets/route.ts
+import { NextResponse, NextRequest } from "next/server";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
-  const pets = await prisma.pet.findMany();
+/* -------------------------------------------------
+   GET /api/pets
+   Returns all pets belonging to the authenticated user
+   ------------------------------------------------- */
+export async function GET(request: NextRequest) {
+  // The middleware puts the user id in the header "x-user-id"
+  const userIdHeader = request.headers.get("x-user-id");
+  const userId = userIdHeader ? Number(userIdHeader) : null;
+
+  if (!userId) {
+    return NextResponse.json(
+      { error: "Unauthenticated" },
+      { status: 401 }
+    );
+  }
+
+  const pets = await prisma.pet.findMany({
+    where: { userId },
+    include: { weights: { orderBy: { measuredAt: "asc" } } },
+  });
   return NextResponse.json(pets);
 }
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
+/* -------------------------------------------------
+   POST /api/pets
+   Creates a new pet for the authenticated user
+   ------------------------------------------------- */
+export async function POST(request: NextRequest) {
+  // Get the user id from the header injected by middleware
+  const userIdHeader = request.headers.get("x-user-id");
+  const userId = userIdHeader ? Number(userIdHeader) : null;
 
-    if (!body.name?.trim() || !body.species?.trim()) {
-      return NextResponse.json(
-        { error: 'Name and species are required.' },
-        { status: 400 }
-      );
-    }
-
-    let calculatedAge: number | null = null;
-    if (body.birthDate) {
-      const birth = new Date(body.birthDate);
-      if (isNaN(birth.getTime())) {
-        return NextResponse.json(
-          { error: 'Invalid birthDate format.' },
-          { status: 400 }
-        );
-      }
-      const now = new Date();
-      calculatedAge = now.getFullYear() - birth.getFullYear();
-      const monthDiff = now.getMonth() - birth.getMonth();
-      const dayDiff = now.getDate() - birth.getDate();
-      if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-        calculatedAge--;
-      }
-    }
-
-    const ageToStore =
-      calculatedAge !== null ? calculatedAge : body.age ?? null;
-
-    const newPet = await prisma.pet.create({
-      data: {
-        name: body.name,
-        species: body.species,
-        breed: body.breed ?? null,
-        age: ageToStore,
-        birthDate: body.birthDate ? new Date(body.birthDate) : null,
-        gender: body.gender ?? 'UNKNOWN',
-        neutered: !!body.neutered, // coerce to boolean
-        description: body.description ?? null,
-      },
-    });
-
-    return NextResponse.json(newPet, { status: 201 });
-  } catch (err) {
-    console.error('POST /api/pets error:', err);
+  if (!userId) {
     return NextResponse.json(
-      { error: 'Failed to create pet.' },
-      { status: 500 }
+      { error: "Unauthenticated" },
+      { status: 401 }
     );
   }
+
+  const body = await request.json();
+
+  // Basic validation (you can expand this as needed)
+  if (!body.name || !body.species) {
+    return NextResponse.json(
+      { error: "Missing required fields (name, species)" },
+      { status: 400 }
+    );
+  }
+
+  const newPet = await prisma.pet.create({
+    data: {
+      // Associate the pet with the logged‑in user
+      user: { connect: { id: userId } },
+
+      // Fields from the request body
+      name: body.name,
+      species: body.species,
+      breed: body.breed ?? null,
+      age: body.age ?? null,
+      birthDate: body.birthDate ? new Date(body.birthDate) : null,
+      deathDate: body.deathDate ? new Date(body.deathDate) : null,
+      gender: body.gender ?? "UNKNOWN",
+      neutered: body.neutered ?? false,
+      description: body.description ?? null,
+    },
+  });
+
+  return NextResponse.json(newPet, { status: 201 });
+}
+
+/* -------------------------------------------------
+   (Optional) Add a placeholder for unsupported methods
+   ------------------------------------------------- */
+export async function PUT() {
+  return NextResponse.json(
+    { error: "Method not allowed on /api/pets" },
+    { status: 405 }
+  );
+}
+export async function DELETE() {
+  return NextResponse.json(
+    { error: "Method not allowed on /api/pets" },
+    { status: 405 }
+  );
 }

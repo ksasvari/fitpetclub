@@ -1,11 +1,11 @@
-// app/api/pets/[id]/weights/route.ts
+// app/pet/[id]/weights/route.ts
 import { NextResponse, NextRequest } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 /* -------------------------------------------------
-   GET  /api/pets/:id/weights
+   GET  /pet/:id/weights
    Returns all weight logs for a given pet (sorted by date)
    ------------------------------------------------- */
 export async function GET(
@@ -31,7 +31,7 @@ export async function GET(
 }
 
 /* -------------------------------------------------
-   POST /api/pets/:id/weights
+   POST /pet/:id/weights
    Adds a new weight entry for the pet
    ------------------------------------------------- */
 export async function POST(
@@ -69,7 +69,7 @@ export async function POST(
 }
 
 /* -------------------------------------------------
-   (Optional) Reject unsupported methods on the collection
+   OPTIONAL: Reject unsupported methods on the collection
    ------------------------------------------------- */
 export async function PUT() {
   return NextResponse.json(
